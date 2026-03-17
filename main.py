@@ -1,6 +1,8 @@
 import discord
 import os
 from dotenv import load_dotenv
+from aiohttp import web
+import asyncio
 
 # Load environment variables
 load_dotenv()
@@ -20,6 +22,20 @@ intents.members = True  # Required for on_member_join
 
 client = discord.Client(intents=intents)
 
+# --- Koyeb Health Check Web Server ---
+async def handle(request):
+    return web.Response(text="Bot is alive 🚀")
+
+async def start_server():
+    app = web.Application()
+    app.router.add_get('/', handle)
+    runner = web.AppRunner(app)
+    await runner.setup()
+    port = int(os.getenv("PORT", 8080))
+    site = web.TCPSite(runner, '0.0.0.0', port)
+    await site.start()
+    print(f"✅ Health check web server started on port {port}")
+
 @client.event
 async def on_ready():
     print(f"🚀 Bot connected as {client.user.name} ({client.user.id})")
@@ -30,6 +46,9 @@ async def on_ready():
     # Set status activity
     activity = discord.Activity(type=discord.ActivityType.watching, name="for new members 🌟 | webivus.com")
     await client.change_presence(activity=activity)
+
+    # Start Health Check Server
+    asyncio.create_task(start_server())
 
 @client.event
 async def on_member_join(member):
