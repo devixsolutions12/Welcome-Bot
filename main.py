@@ -101,15 +101,17 @@ async def on_member_join(member):
     channel_embed.set_footer(text=f"Check out the channels or ask for a tour! | Total Members: {member.guild.member_count}")
 
     for channel_id in CHANNEL_IDS:
-        channel = client.get_channel(channel_id)
-        if channel:
-            try:
-                await channel.send(embed=channel_embed)
-                print(f"✅ Welcome message sent to channel {channel_id}")
-            except Exception as e:
-                print(f"⚠️ Error sending message to channel {channel_id}: {e}")
-        else:
-            print(f"⚠️ Channel {channel_id} not found in cache. Verify bot is in server and has access.")
+        # Use fetch_channel for absolute guarantee instead of relying on cache
+        try:
+            channel = await client.fetch_channel(channel_id)
+            await channel.send(embed=channel_embed)
+            print(f"✅ Welcome message sent to channel {channel_id}")
+        except discord.NotFound:
+            print(f"⚠️ Channel {channel_id} not found.")
+        except discord.Forbidden:
+            print(f"⚠️ Insufficient permissions to send to channel {channel_id}.")
+        except Exception as e:
+            print(f"⚠️ Error with channel {channel_id}: {e}")
 
 # Run the bot
 if __name__ == "__main__":
